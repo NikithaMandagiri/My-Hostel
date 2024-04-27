@@ -21,7 +21,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavController
+import com.google.firebase.auth.FirebaseAuth
 import com.myhostel.R
 import com.myhostel.routing.Screen
 import com.myhostel.ui.theme.MyHostelTheme
@@ -31,6 +34,7 @@ import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.myhostel.ui.hostelDatabase.HostelDatabase
 import com.myhostel.ui.theme.red
+import com.myhostel.ui.theme.white
 import com.myhostel.utils.isValidEmail
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
@@ -44,7 +48,8 @@ fun LoginScreen(navController: NavController) {
     val scrollState = rememberScrollState()
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    val db = Firebase.firestore
+    var hosteller by remember { mutableStateOf(false) }
+    val firebaseAuth = FirebaseAuth.getInstance()
     MyHostelTheme {
         Scaffold {
             Column(
@@ -99,85 +104,52 @@ fun LoginScreen(navController: NavController) {
                                 RoundedButton(
                                     text = "Login",
                                     onClick = {
-                                        if (email.isNotEmpty()) {
-                                            if (!isValidEmail(email.trim())) {
-                                                if (password.isNotEmpty()) {
-                                                    db.collection("users")
-                                                        .get()
-                                                        .addOnSuccessListener { result ->
-                                                            if (result.isEmpty) {
-                                                                Toast.makeText(
-                                                                    context,
-                                                                    "Invalid user.",
-                                                                    Toast.LENGTH_LONG
-                                                                ).show()
-                                                                return@addOnSuccessListener
-                                                            } else {
-                                                                for (document in result) {
-                                                                    Log.e(
-                                                                        "TAG",
-                                                                        "setOnClick: $document"
-                                                                    )
-                                                                    if (document.data["email"] == email &&
-                                                                        document.data["password"] == password
-                                                                    ) {
-                                                                        database.saveData(
-                                                                            "isLogin",
-                                                                            true
-                                                                        )
-                                                                        Toast.makeText(
-                                                                            context,
-                                                                            "Login successfully.",
-                                                                            Toast.LENGTH_LONG
-                                                                        ).show()
-                                                                        navController.navigate(
-                                                                            Screen.MainScreen.route
-                                                                        ) {
-                                                                            popUpTo(Screen.LoginScreen.route) {
-                                                                                inclusive = true
-                                                                            }
-                                                                        }
-                                                                    } else {
-                                                                        Toast.makeText(
-                                                                            context,
-                                                                            "Invalid user.",
-                                                                            Toast.LENGTH_LONG
-                                                                        ).show()
-                                                                        return@addOnSuccessListener
-                                                                    }
-                                                                }
-                                                            }
-
-                                                        }
-                                                        .addOnFailureListener { exception ->
-                                                            Toast.makeText(
-                                                                context,
-                                                                exception.message.toString(),
-                                                                Toast.LENGTH_LONG
-                                                            ).show()
-                                                        }
-                                                } else {
-                                                    Toast.makeText(
-                                                        context,
-                                                        "Please enter password.",
-                                                        Toast.LENGTH_LONG
-                                                    ).show()
-
-                                                }
-                                            } else {
-                                                Toast.makeText(
-                                                    context,
-                                                    "Please enter valid email.",
-                                                    Toast.LENGTH_LONG
-                                                ).show()
-
-                                            }
-                                        } else {
+                                        if (email.isEmpty()) {
                                             Toast.makeText(
                                                 context,
                                                 "Please enter email.",
                                                 Toast.LENGTH_LONG
                                             ).show()
+
+                                        } else if (isValidEmail(email.toString())) {
+                                            Toast.makeText(
+                                                context,
+                                                "Please enter valid email.",
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                        } else if (password.isEmpty()) {
+                                            Toast.makeText(
+                                                context,
+                                                "Please enter password.",
+                                                Toast.LENGTH_LONG
+                                            ).show()
+
+                                        } else {
+                                            hosteller = true
+                                            firebaseAuth.signInWithEmailAndPassword(email.lowercase(), password)
+                                                .addOnCompleteListener { task ->
+                                                    if (task.isSuccessful) {
+                                                        database.saveData(
+                                                            "isLogin", true
+                                                        )
+                                                        Toast.makeText(
+                                                            context, "Login successfully.", Toast.LENGTH_SHORT
+                                                        ).show()
+                                                        navController.navigate(
+                                                            Screen.MainScreen.route
+                                                        ) {
+                                                            popUpTo(Screen.LoginScreen.route) {
+                                                                inclusive = true
+                                                            }
+                                                        }
+                                                        hosteller = false
+                                                    } else {
+                                                        Toast.makeText(
+                                                            context, task.exception?.message.toString(), Toast.LENGTH_SHORT
+                                                        ).show()
+                                                        hosteller = false
+                                                    }
+                                                }
                                         }
                                     }
                                 )
@@ -207,7 +179,21 @@ fun LoginScreen(navController: NavController) {
                     }
                 }
             }
-
+            if (hosteller) {
+                Dialog(
+                    onDismissRequest = { },
+                    DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
+                ) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(100.dp)
+                            .background(white, shape = RoundedCornerShape(8.dp))
+                    ) {
+                        CircularProgressIndicator(color = red)
+                    }
+                }
+            }
 
         }
     }

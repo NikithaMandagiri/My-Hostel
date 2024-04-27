@@ -15,9 +15,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.myhostel.R
 import com.myhostel.routing.Screen
@@ -44,13 +42,16 @@ fun MainScreen(navController: NavController) {
     val scaffoldState = rememberScaffoldState()
     val scope = rememberCoroutineScope()
     var isLogout by remember { mutableStateOf(false) }
-    val list = arrayListOf<HostelModel>().apply {
-        add(HostelModel(id = "", image = "", name = "Cornell Quarter"))
-        add(HostelModel(id = "", image = "", name = "King Edward's Square"))
-        add(HostelModel(id = "", image = "", name = "Parkside Halls"))
-        add(HostelModel(id = "", image = "", name = "West Parkside Village"))
-        add(HostelModel(id = "", image = "", name = "East Parkside Village"))
-        add(HostelModel(id = "", image = "", name = "Woodlands"))
+    val list = arrayListOf<HostelModel>()
+    LaunchedEffect(Unit) {
+        list.apply {
+            add(HostelModel(id = "", image = "", name = "Cornell Quarter"))
+            add(HostelModel(id = "", image = "", name = "King Edward's Square"))
+            add(HostelModel(id = "", image = "", name = "Parkside Halls"))
+            add(HostelModel(id = "", image = "", name = "West Parkside Village"))
+            add(HostelModel(id = "", image = "", name = "East Parkside Village"))
+            add(HostelModel(id = "", image = "", name = "Woodlands"))
+        }
     }
     MyHostelTheme {
         androidx.compose.material.Scaffold(

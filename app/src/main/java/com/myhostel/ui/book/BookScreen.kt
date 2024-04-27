@@ -26,6 +26,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import androidx.navigation.NavController
 import com.myhostel.R
 import com.myhostel.ui.theme.MyHostelTheme
@@ -35,7 +37,8 @@ import com.myhostel.utils.HostelBorderFeild
 import com.myhostel.utils.RoundedButton
 import org.json.JSONArray
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class,
+@OptIn(
+    ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class,
     ExperimentalAnimationApi::class
 )
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -48,13 +51,22 @@ fun BookScreen(navController: NavController) {
     var isExpanded by remember {
         mutableStateOf(false)
     }
-    val amenities = arrayListOf<String>("Water coolers ","Water purifiers",
-    "Washing machines","TV room","Reading room","Gym","Wi-Fi internet")
+    val amenities = arrayListOf<String>(
+        "Water coolers ", "Water purifiers",
+        "Washing machines", "TV room", "Reading room", "Gym", "Wi-Fi internet"
+    )
     var isBooked by remember { mutableStateOf(false) }
     val selectedNames = remember {
         mutableStateListOf<String>()
 
     }
+    var isHostel by remember {
+        mutableStateOf(false)
+    }
+    val hostelList = arrayListOf<String>(
+        "Cornell Quarter", "King Edward's Square",
+        "Parkside Halls", "West Parkside Village", "East Parkside Village", "Woodlands"
+    )
     MyHostelTheme {
         Scaffold {
             Column(
@@ -79,9 +91,11 @@ fun BookScreen(navController: NavController) {
                                 navController.navigateUp()
                             }
                         ) {
-                            Icon(imageVector = Icons.Rounded.ArrowBack,
+                            Icon(
+                                imageVector = Icons.Rounded.ArrowBack,
                                 tint = Color.White,
-                                contentDescription = "Back")
+                                contentDescription = "Back"
+                            )
                         }
                     },
                     colors = TopAppBarDefaults.smallTopAppBarColors(
@@ -98,18 +112,72 @@ fun BookScreen(navController: NavController) {
                             .padding(20.dp)
                     ) {
 
-                        Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(Modifier.height(10.dp))
+                        OutlinedTextField(
+                            value = if (hostelName != "") hostelName else "Select hostel",
+                            onValueChange = { hostelName = it },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(10.dp)
+                                .clickable { isHostel = !isHostel },
+                            enabled = false,
+                            trailingIcon = {
+                                Icon(
+                                    if (isHostel)
+                                        Icons.Filled.KeyboardArrowUp
+                                    else
+                                        Icons.Filled.KeyboardArrowDown,
+                                    "contentDescription",
 
-                        HostelBorderFeild(
-                            value = hostelName,
-                            onValueChange = { text ->
-                                hostelName = text
+                                    )
                             },
-                            placeholder = "Enter hostel name",
-                            keyboardType = KeyboardType.Text,
+                            textStyle = TextStyle(color = Color.Black)
                         )
+                        Box {
+                            if (isHostel) {
+                                Popup(
+                                    alignment = Alignment.TopCenter,
+                                    properties = PopupProperties(
+                                        excludeFromSystemGesture = true,
+                                    ),
+                                    onDismissRequest = { isHostel = false }
+                                ) {
 
-                        Spacer(modifier = Modifier.height(10.dp))
+                                    Column(
+                                        modifier = Modifier
+                                            .verticalScroll(state = scrollState)
+                                            .border(width = 1.dp, color = Color.Gray)
+                                            .background(white),
+
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                    ) {
+
+                                        hostelList.onEachIndexed { index, item ->
+                                            if (index != 0) {
+                                                Divider(thickness = 1.dp, color = Color.LightGray)
+                                            }
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(10.dp)
+                                                    .clickable {
+                                                        hostelName = item
+                                                        isHostel = !isHostel
+                                                    },
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(
+                                                    text = item,
+                                                    style = TextStyle(color = Color.Black)
+                                                )
+                                            }
+                                        }
+
+                                    }
+                                }
+                            }
+                        }
+                        Spacer(Modifier.height(10.dp))
                         HostelBorderFeild(
                             value = email,
                             onValueChange = { text ->
@@ -134,7 +202,9 @@ fun BookScreen(navController: NavController) {
                                     ExposedDropdownMenuDefaults.TrailingIcon(expanded = isExpanded)
                                 },
                                 colors = ExposedDropdownMenuDefaults.textFieldColors(),
-                                modifier = Modifier.fillMaxWidth().padding(start = 20.dp,end = 20.dp)
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(start = 20.dp, end = 20.dp)
                             )
                             ExposedDropdownMenu(
                                 expanded = isExpanded,
@@ -182,7 +252,7 @@ fun BookScreen(navController: NavController) {
                                     if (email.isNotEmpty()) {
                                         if (selectedNames.isNotEmpty()) {
                                             isBooked = true
-                                        }else{
+                                        } else {
                                             Toast.makeText(
                                                 context,
                                                 "Please select amenities.",
@@ -217,7 +287,15 @@ fun BookScreen(navController: NavController) {
                     isBooked = false
                 },
                 title = { Text(stringResource(id = R.string.app_name)) },
-                text = { Text("Dear student,\nYou have applied for Hostel name: $hostelName and Amenities ${selectedNames.joinToString(", ")}. ") },
+                text = {
+                    Text(
+                        "Dear student,\nYou have applied for Hostel name: $hostelName and Amenities ${
+                            selectedNames.joinToString(
+                                ", "
+                            )
+                        }. "
+                    )
+                },
                 confirmButton = {
                     RoundedButton(
                         text = "Ok",
